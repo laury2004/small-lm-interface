@@ -135,3 +135,4 @@ Frontend (note rapide)
 - Se l'output non appare nell'interfaccia, apri DevTools → Network e Console per vedere la richiesta e la risposta, oppure chiama direttamente `/generate` con curl per verificare il JSON.
 
 
+# AI_Lyrics_Generator
