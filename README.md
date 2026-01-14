@@ -28,6 +28,8 @@ Assicurati di avere Python installato sul tuo sistema.
 ### 2. Installazione delle dipendenze
 Apri il terminale nella cartella del progetto e installa le librerie necessarie:
 ```bash
+pip install datasets
+
 pip install -r requirements.txt
 
 Poi per far avviare il tutto scrivere nel terminale :
