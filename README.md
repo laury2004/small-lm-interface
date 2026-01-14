@@ -29,3 +29,10 @@ Assicurati di avere Python installato sul tuo sistema.
 Apri il terminale nella cartella del progetto e installa le librerie necessarie:
 ```bash
 pip install -r requirements.txt
+
+Poi per far avviare il tutto scrivere nel terminale :
+
+python app.py
+
+se lo si vuole ricaricare (se si ferma) :
+CTRL + "C"
