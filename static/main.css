@@ -1,45 +1,78 @@
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/* --- DESIGN SYSTEM --- */
+:root {
+    --bg-body: #f0f2f7;
+    --bg-card: #ffffff;
+    --text-main: #2d3436;
+    --primary-purple: #6c5ce7;
+    --primary-pink: #fd79a8;
+    --purple-box: #6d44d1;
+    --text-lyrics: #ffe0e9;
+    --gradient-main: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #fd79a8 100%);
+    --transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-        monospace;
+/* --- TOTAL DARK MODE --- */
+body.dark-theme, 
+body.dark-theme .v-application,
+body.dark-theme .v-main {
+    background-color: #0f172a !important; /* Questo copre TUTTO lo schermo */
+    --bg-card: #1e293b;
+    --text-main: #f1f5f9;
+    --purple-box: #2d1b5e;
+    --text-lyrics: #fda4af;
 }
 
-.App {
+/* Forza tutte le card e i fogli a diventare scuri */
+body.dark-theme .v-card,
+body.dark-theme .v-sheet,
+body.dark-theme .v-list {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border: none !important;
+}
+
+/* Rende scuri gli input (Select e Text-field) */
+body.dark-theme .v-field {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* --- STILI GENERALI --- */
+* {
+    transition: background-color var(--transition), color var(--transition);
+}
+
+.v-app-bar {
+    background: var(--gradient-main) !important;
+    color: white !important;
+}
+
+.gradient-btn {
+    background: var(--gradient-main) !important;
+    color: white !important;
+    height: 58px !important;
+    border-radius: 16px !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3) !important;
+}
+
+.lyrics-box-pro {
+    background: var(--purple-box) !important;
+    border-radius: 32px !important;
+    padding: 2rem !important;
+}
+
+.lyrics-text {
+    font-size: 1.3rem;
+    line-height: 1.8;
+    color: var(--text-lyrics) !important;
     text-align: center;
 }
 
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+.typing::after {
+    content: '|';
+    animation: blink 0.8s infinite;
+    color: var(--primary-pink);
 }
 
-.App-header {
-    background-color: #282c34;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
-}
-
-.App-link {
-    color: #61dafb;
-}
-
-.heart {
-    color: #ff0000;
-}
-
-.small {
-    font-size: 0.75rem;
-}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }

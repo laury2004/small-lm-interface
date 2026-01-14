@@ -1,163 +1,331 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
 
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ title }}</title>
-        <!-- Vuetify via CDN (simple) -->
-        <link href="https://cdn.jsdelivr.net/npm/vuetify@2.7.1/dist/vuetify.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    </head>
+<html lang="it">
 
-    <body>
-        <div id="app">
-            <v-app>
-                <v-main>
-                    <v-container>
-                        <v-row>
-                            <v-col cols="12">
-                                <h1>Very simple LM demo</h1>
-                                <p>Provide a link to a .txt file (or local path) to train a tiny bigram model, then interactively generate text.</p>
-                            </v-col>
+<head>
 
-                            <v-col cols="12" md="8">
-                                <v-text-field v-model="txtUrl" label="Text URL or local path"></v-text-field>
-                            </v-col>
-                            <v-col cols="12" md="4">
-                                <v-btn color="primary" @click="train" :loading="loadingTrain">Train</v-btn>
-                            </v-col>
+    <meta charset="UTF-8">
 
-                            <v-col cols="12">
-                                <v-alert v-if="trainMsg" type="success">{{ trainMsg }}</v-alert>
-                                <v-alert v-if="trainError" type="error">{{ trainError }}</v-alert>
-                            </v-col>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-                            <v-col cols="12" md="6">
-                                <v-text-field v-model="prompt" label="Prompt (optional)"></v-text-field>
-                            </v-col>
-                            <v-col cols="12" md="3">
-                                <v-select v-model="ngram" :items="['bigram','trigram']" label="N-gram"></v-select>
-                            </v-col>
-                            <v-col cols="12" md="3">
-                                <v-select v-model="decoding" :items="['greedy','sample','beam']" label="Decoding"></v-select>
-                            </v-col>
-                            <template v-if="decoding==='beam'">
-                                <v-col cols="6" md="2">
-                                    <v-text-field v-model.number="beam_size" type="number" label="Beam size"></v-text-field>
+    <title>LyricGen AI | Professional Studio</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.css" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/main.css">
+
+</head>
+
+<body>
+
+<div id="app">
+
+    <v-app :theme="isDark ? 'dark' : 'light'">
+
+        <v-app-bar flat class="v-app-bar">
+
+            <v-app-bar-title class="font-weight-black">
+
+                <v-icon class="mr-2">mdi-waveform</v-icon> LyricGen AI
+
+            </v-app-bar-title>
+
+            <v-spacer></v-spacer>
+
+            <v-btn prepend-icon="mdi-delete-sweep" variant="text" class="clean-btn mr-4" @click="resetAll">Pulisci Tutto</v-btn>
+
+            <v-btn icon @click="toggleTheme">
+
+                <v-icon>[[ isDark ? 'mdi-brightness-7' : 'mdi-brightness-4' ]]</v-icon>
+
+            </v-btn>
+
+        </v-app-bar>
+
+
+
+        <v-main>
+
+            <v-container fluid class="pa-8">
+
+                <v-row>
+
+                    <v-col cols="12" md="4" lg="3">
+
+                        <v-card class="pa-6 welcome-card h-100 rounded-xl elevation-2">
+
+                            <h3 class="text-h5 font-weight-bold mb-4"><v-icon color="pink">mdi-information-outline</v-icon> Benvenuto</h3>
+
+                            <p class="text-body-2 mb-6">
+
+                                Questo studio AI analizza i pattern dei testi musicali italiani.
+
+                                <ol class="mt-2 ml-4">
+
+                                    <li>Scegli un artista dal dataset</li>
+
+                                    <li>Inserisci una frase di inizio</li>
+
+                                    <li>Regola lunghezza e creatività</li>
+
+                                </ol>
+
+                            </p>
+
+                            <v-divider class="mb-6"></v-divider>
+
+                            <v-list density="compact" nav class="bg-transparent pa-0">
+
+                                <v-list-item prepend-icon="mdi-check-circle" title="Smoothing Laplace attivo" color="pink"></v-list-item>
+
+                                <v-list-item prepend-icon="mdi-check-circle" title="Bigram Model V2" color="pink"></v-list-item>
+
+                            </v-list>
+
+                        </v-card>
+
+                    </v-col>
+
+
+
+                    <v-col cols="12" md="8" lg="9">
+
+                        <v-card class="pa-8 rounded-xl elevation-3 mb-8">
+
+                            <v-row>
+
+                                <v-col cols="12" md="6">
+
+                                    <v-select v-model="selectedArtist" :items="artists" label="Seleziona artista" variant="outlined" prepend-inner-icon="mdi-account-music"></v-select>
+
                                 </v-col>
-                            </template>
-                            <template v-if="decoding==='sample'">
-                                <v-col cols="6" md="2">
-                                    <v-text-field v-model.number="top_k" type="number" label="Top-K"></v-text-field>
+
+                                <v-col cols="12" md="6">
+
+                                    <v-text-field v-model="prompt" label="Frase iniziale" variant="outlined" prepend-inner-icon="mdi-pencil-outline"></v-text-field>
+
                                 </v-col>
-                                <v-col cols="6" md="2">
-                                    <v-text-field v-model.number="top_p" type="number" label="Top-P"></v-text-field>
+
+                                <v-col cols="12" md="6">
+
+                                    <div class="text-caption mb-1 font-weight-bold">Lunghezza del brano</div>
+
+                                    <v-slider v-model="length" min="10" max="150" class="slider-blue"></v-slider>
+
                                 </v-col>
-                                <v-col cols="6" md="2">
-                                    <v-text-field v-model.number="temperature" type="number" label="Temperature"></v-text-field>
+
+                                <v-col cols="12" md="6">
+
+                                    <div class="text-caption mb-1 font-weight-bold">Creatività</div>
+
+                                    <v-slider v-model="creativity" min="0" max="1" step="0.1" class="slider-pink" prepend-icon="mdi-lightbulb-outline"></v-slider>
+
                                 </v-col>
-                            </template>
-                            <v-col cols="6" md="3">
-                                <v-text-field v-model.number="length" type="number" label="Max length"></v-text-field>
-                            </v-col>
-                            <v-col cols="6" md="3">
-                                <v-btn color="secondary" @click="generate" :loading="loadingGen">Generate</v-btn>
-                            </v-col>
 
-                            <v-col cols="12">
-                                <v-card>
-                                    <v-card-title>Output</v-card-title>
-                                    <v-card-text>
-                                            <div v-if="output !== null">
-                                                <div v-if="output !== ''">
-                                                    <pre style="white-space:pre-wrap; background:#f6f8fa; padding:8px; border-radius:4px; border:1px solid #ddd;" v-text="output"></pre>
-                                                </div>
-                                                <div v-else class="small">(empty output)</div>
-                                            </div>
-                                            <div v-else class="small">No output yet</div>
-                                    </v-card-text>
-                                </v-card>
-                            </v-col>
-                            <!-- debug UI removed to keep template minimal -->
-                        </v-row>
-                    </v-container>
-                </v-main>
-            </v-app>
-        </div>
+                            </v-row>
 
-        <!-- Vue + Vuetify runtime from CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vuetify@2.7.1/dist/vuetify.js"></script>
+                            <v-btn block size="x-large" class="gradient-btn mt-4" @click="generate" :loading="loading">
 
-        <script>
-            new Vue({
-                el: '#app',
-                vuetify: new Vuetify(),
-                data: () => ({
-                    txtUrl: '',
-                    prompt: '',
-                    length: 20,
-                    ngram: 'trigram',
-                    decoding: 'greedy',
-                    beam_size: 3,
-                    top_k: 0,
-                    top_p: 0.0,
-                    temperature: 1.0,
-                    loadingTrain: false,
-                    loadingGen: false,
-                    trainMsg: '',
-                    trainError: '',
-                    // null = nothing generated yet, '' = generated but empty
-                    output: null,
-                }),
-                methods: {
-                    async train() {
-                        this.trainMsg = ''
-                        this.trainError = ''
-                        this.loadingTrain = true
-                        try {
-                            const res = await fetch('/train', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ url: this.txtUrl })
-                            })
-                            const j = await res.json()
-                            if (j.ok) {
-                                this.trainMsg = `Trained. vocab=${j.vocab_size} unigrams=${j.unigrams} bigrams=${j.bigrams}`
-                            } else {
-                                this.trainError = j.error || 'train failed'
-                            }
-                        } catch (e) {
-                            this.trainError = String(e)
-                        } finally {
-                            this.loadingTrain = false
-                        }
-                    },
-                    async generate() {
-                        // reset to null to indicate a new generation in progress
-                        this.output = null
-                        this.loadingGen = true
-                        try {
-                            const res = await fetch('/generate', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ prompt: this.prompt, length: this.length, ngram: this.ngram, decoding: this.decoding, beam_size: this.beam_size, top_k: this.top_k, top_p: this.top_p, temperature: this.temperature })
-                            })
-                            const j = await res.json()
-                            if (j.ok) this.output = j.output
-                            else this.output = `Error: ${j.error}`
-                        } catch (e) {
-                            this.output = String(e)
-                        } finally {
-                            this.loadingGen = false
-                        }
-                    }
-                }
-            })
-        </script>
+                                GENERA ORA <v-icon end>mdi-sparkles</v-icon>
+
+                            </v-btn>
+
+                        </v-card>
 
 
-    </body>
+
+                        <v-expand-transition>
+
+                            <v-card v-if="displayedOutput" class="lyrics-box-pro pa-10 rounded-xl elevation-4">
+
+                                <div class="d-flex align-center mb-8 artist-header-box pa-4 rounded-lg">
+
+                                    <v-avatar color="white" size="large" class="mr-4">
+
+                                        <v-icon color="purple">mdi-music-clef-treble</v-icon>
+
+                                    </v-avatar>
+
+                                    <div>
+
+                                        <div class="text-overline text-white">Artista Selezionato</div>
+
+                                        <div class="text-h6 font-weight-black text-white">[[ selectedArtist ]]</div>
+
+                                    </div>
+
+                                    <v-spacer></v-spacer>
+
+                                    <v-btn-group variant="flat">
+
+                                        <v-btn icon="mdi-play" @click="speakLyrics" color="white" class="mr-1"></v-btn>
+
+                                        <v-btn icon="mdi-download" @click="downloadText" color="white" class="mr-1"></v-btn>
+
+                                        <v-btn icon="mdi-content-copy" @click="copyText" color="white"></v-btn>
+
+                                    </v-btn-group>
+
+                                </div>
+
+                                <div class="lyrics-text" :class="{ 'typing': isTyping }">[[ displayedOutput ]]</div>
+
+                            </v-card>
+
+                        </v-expand-transition>
+
+                    </v-col>
+
+                </v-row>
+
+            </v-container>
+
+        </v-main>
+
+        <v-snackbar v-model="snackbar" :color="snackColor">[[ snackMsg ]]</v-snackbar>
+
+    </v-app>
+
+</div>
+
+
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.js"></script>
+
+<script>
+
+    const { createApp } = Vue;
+
+    const { createVuetify } = Vuetify;
+
+    createApp({
+
+        delimiters: ['[[', ']]'],
+
+        data() {
+
+            return {
+
+                isDark: false, isTyping: false,
+
+                artists: JSON.parse('{{ artists | tojson | safe }}') || [],
+
+                selectedArtist: null, prompt: '', length: 60, creativity: 0.7,
+
+                output: '', displayedOutput: '', loading: false,
+
+                snackbar: false, snackMsg: '', snackColor: 'teal'
+
+            }
+
+        },
+
+        watch: {
+
+            isDark(val) {
+
+                document.body.classList.toggle('dark-theme', val);
+
+                localStorage.setItem('theme', val ? 'dark' : 'light');
+
+            }
+
+        },
+
+        methods: {
+
+            toggleTheme() { this.isDark = !this.isDark; },
+
+            async generate() {
+
+                this.loading = true; this.displayedOutput = '';
+
+                try {
+
+                    const res = await fetch('/generate', {
+
+                        method: 'POST',
+
+                        headers: {'Content-Type': 'application/json'},
+
+                        body: JSON.stringify({ artist: this.selectedArtist, prompt: this.prompt, length: this.length, creativity: this.creativity })
+
+                    });
+
+                    const data = await res.json();
+
+                    this.output = data.output;
+
+                    this.typeWriter();
+
+                } finally { this.loading = false; }
+
+            },
+
+            typeWriter() {
+
+                this.isTyping = true; let i = 0;
+
+                const interval = setInterval(() => {
+
+                    if (i < this.output.length) { this.displayedOutput += this.output.charAt(i); i++; }
+
+                    else { clearInterval(interval); this.isTyping = false; }
+
+                }, 30);
+
+            },
+
+            resetAll() {
+
+                this.selectedArtist = null; this.prompt = ''; this.output = ''; this.displayedOutput = '';
+
+                this.snackbar = true; this.snackMsg = "Tutto pulito!";
+
+            },
+
+            speakLyrics() {
+
+                window.speechSynthesis.cancel();
+
+                const u = new SpeechSynthesisUtterance(this.output);
+
+                u.lang = 'it-IT'; window.speechSynthesis.speak(u);
+
+            },
+
+            downloadText() {
+
+                const b = new Blob([this.output], {type:'text/plain'});
+
+                const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'canzone.txt'; a.click();
+
+            },
+
+            copyText() { navigator.clipboard.writeText(this.output); this.snackMsg = "Copiato!"; this.snackbar = true; }
+
+        },
+
+        mounted() {
+
+            const saved = localStorage.getItem('theme');
+
+            this.isDark = saved === 'dark';
+
+            if(this.isDark) document.body.classList.add('dark-theme');
+
+        }
+
+    }).use(createVuetify()).mount('#app')
+
+</script>
+
+</body>
 
 </html>
