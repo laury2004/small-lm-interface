@@ -28,7 +28,7 @@ Assicurati di avere Python installato sul tuo sistema.
 ### 2. Installazione delle dipendenze
 Apri il terminale nella cartella del progetto e installa le librerie necessarie:
 ```bash
-pip install datasets
+source /workspaces/small-lm-interface/.venv/bin/activate (se non c'è già)
 
 pip install -r requirements.txt
 
